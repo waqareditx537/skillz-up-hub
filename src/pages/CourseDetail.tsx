@@ -1,103 +1,98 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
-import { ArrowLeft, Play, Lock, Star, Users, Clock } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { ArrowLeft, Zap, ExternalLink, Play, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 const CourseDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user, loading } = useAuth();
   const [course, setCourse] = useState<any>(null);
-  const [lessons, setLessons] = useState<any[]>([]);
-  const [hasPurchased, setHasPurchased] = useState(false);
-  const [purchaseStatus, setPurchaseStatus] = useState<'none' | 'pending' | 'paid'>('none');
+  const [adSettings, setAdSettings] = useState<any>(null);
+  const [adWatched, setAdWatched] = useState(false);
+  const [showingAd, setShowingAd] = useState(false);
   const [loadingCourse, setLoadingCourse] = useState(true);
 
   useEffect(() => {
-    if (!loading && !user) {
-      navigate("/login");
-    }
-  }, [user, loading, navigate]);
-
-  useEffect(() => {
-    if (id && user) {
+    if (id) {
       fetchCourseDetails();
-      checkPurchaseStatus();
+      fetchAdSettings();
     }
-  }, [id, user]);
+  }, [id]);
+
+  // Set SEO meta tags
+  useEffect(() => {
+    if (course) {
+      document.title = `${course.title} - Free Course | SkillzUp`;
+      const metaDesc = document.querySelector('meta[name="description"]');
+      const content = course.meta_description || course.description || `Free course: ${course.title}. Watch a short ad and access the full course content.`;
+      if (metaDesc) {
+        metaDesc.setAttribute("content", content);
+      } else {
+        const meta = document.createElement("meta");
+        meta.name = "description";
+        meta.content = content;
+        document.head.appendChild(meta);
+      }
+    }
+  }, [course]);
 
   const fetchCourseDetails = async () => {
     try {
-      const { data: courseData, error: courseError } = await supabase
-        .from('courses')
-        .select('*')
-        .eq('id', id)
-        .eq('published', true)
+      const { data, error } = await supabase
+        .from("courses")
+        .select("*")
+        .eq("id", id)
+        .eq("published", true)
         .single();
 
-      if (courseError) throw courseError;
-      setCourse(courseData);
-
-      // Fetch lessons for this course
-      const { data: lessonsData, error: lessonsError } = await supabase
-        .from('lessons')
-        .select('*')
-        .eq('course_id', id)
-        .order('sort_order', { ascending: true });
-
-      if (lessonsError) throw lessonsError;
-      setLessons(lessonsData || []);
+      if (error) throw error;
+      setCourse(data);
     } catch (error: any) {
-      console.error('Error fetching course:', error);
-      toast.error('Failed to load course details');
+      console.error("Error fetching course:", error);
+      toast.error("Failed to load course details");
     } finally {
       setLoadingCourse(false);
     }
   };
 
-  const checkPurchaseStatus = async () => {
+  const fetchAdSettings = async () => {
     try {
-      const { data, error } = await supabase
-        .from('purchases')
-        .select('*')
-        .eq('user_id', user?.id)
-        .eq('course_id', id)
-        .order('created_at', { ascending: false })
+      const { data } = await supabase
+        .from("ad_settings")
+        .select("*")
+        .eq("active", true)
         .limit(1)
         .maybeSingle();
-
-      if (error) throw error;
       
-      if (data) {
-        setPurchaseStatus(data.status as 'pending' | 'paid');
-        setHasPurchased(data.status === 'paid');
-      } else {
-        setPurchaseStatus('none');
-        setHasPurchased(false);
-      }
+      setAdSettings(data);
     } catch (error) {
-      console.error('Error checking purchase status:', error);
+      console.error("Error fetching ad settings:", error);
     }
   };
 
-  const discount = course?.mrp && course?.price 
-    ? Math.round(((course.mrp - course.price) / course.mrp) * 100) 
-    : 0;
-
-  const handleBuyNow = () => {
-    navigate(`/buy/${id}`);
+  const handleWatchAd = () => {
+    setShowingAd(true);
   };
 
-  const handleGoBack = () => {
-    navigate(-1);
+  const handleAdComplete = () => {
+    setAdWatched(true);
+    setShowingAd(false);
+    toast.success("Ad complete! You can now access the course.");
   };
 
-  if (loading || loadingCourse) {
+  const handleAccessCourse = () => {
+    if (course?.drive_link) {
+      window.open(course.drive_link, "_blank", "noopener,noreferrer");
+    } else {
+      toast.error("Course link not available yet.");
+    }
+  };
+
+  if (loadingCourse) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p>Loading...</p>
@@ -107,8 +102,9 @@ const CourseDetail = () => {
 
   if (!course) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>Course not found</p>
+      <div className="min-h-screen flex items-center justify-center flex-col gap-4">
+        <p className="text-lg">Course not found</p>
+        <Button onClick={() => navigate("/")}>Go Home</Button>
       </div>
     );
   }
@@ -119,12 +115,12 @@ const CourseDetail = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="bg-primary text-primary-foreground p-4 sticky top-0 z-50">
-        <div className="flex items-center space-x-4">
+        <div className="max-w-4xl mx-auto flex items-center space-x-4">
           <Button 
             variant="ghost" 
             size="icon" 
             className="text-primary-foreground hover:bg-primary-hover"
-            onClick={handleGoBack}
+            onClick={() => navigate(-1)}
           >
             <ArrowLeft className="h-6 w-6" />
           </Button>
@@ -132,67 +128,38 @@ const CourseDetail = () => {
         </div>
       </header>
 
-      <main className="pb-24">
+      <main className="max-w-4xl mx-auto pb-24">
         {/* Course Image */}
         <div className="relative aspect-video">
           <img
-            src={course.image_url || '/placeholder.svg'}
+            src={course.image_url || "/placeholder.svg"}
             alt={course.title}
             className="w-full h-full object-cover"
           />
-          {!hasPurchased && discount > 0 && (
-            <Badge className="absolute top-4 right-4 bg-discount text-discount-foreground">
-              {discount}% OFF
-            </Badge>
-          )}
+          <Badge className="absolute top-4 right-4 bg-success text-success-foreground text-lg px-4 py-1">
+            FREE
+          </Badge>
         </div>
 
         {/* Course Info */}
-        <div className="p-4 space-y-6">
+        <div className="p-4 md:p-8 space-y-6">
           <div>
-            <h1 className="text-2xl font-bold text-foreground mb-2">{course.title}</h1>
-            
-            {(course.rating || course.students || course.duration) && (
-              <div className="flex items-center space-x-4 text-sm text-muted-foreground mb-4">
-                {course.rating && (
-                  <div className="flex items-center space-x-1">
-                    <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                    <span>{course.rating}</span>
-                  </div>
-                )}
-                {course.students && (
-                  <div className="flex items-center space-x-1">
-                    <Users className="w-4 h-4" />
-                    <span>{course.students.toLocaleString()} students</span>
-                  </div>
-                )}
-                {course.duration && (
-                  <div className="flex items-center space-x-1">
-                    <Clock className="w-4 h-4" />
-                    <span>{course.duration}</span>
-                  </div>
-                )}
-              </div>
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">{course.title}</h1>
+            {course.meta_description && (
+              <p className="text-sm text-muted-foreground italic mb-4">{course.meta_description}</p>
             )}
-
-            <div className="flex items-center space-x-3 mb-4">
-              <span className="text-3xl font-bold text-success">Rs {course.price}</span>
-              {course.mrp > course.price && (
-                <span className="text-lg text-course-mrp line-through">Rs {course.mrp}</span>
-              )}
-            </div>
           </div>
 
           {/* Description */}
           <div>
-            <h3 className="text-lg font-semibold mb-2">Description</h3>
-            <p className="text-muted-foreground leading-relaxed">{course.description}</p>
+            <h3 className="text-lg font-semibold mb-2">About This Course</h3>
+            <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">{course.description}</p>
           </div>
 
           {/* Features */}
           {features.length > 0 && (
             <div>
-              <h3 className="text-lg font-semibold mb-3">What you'll get</h3>
+              <h3 className="text-lg font-semibold mb-3">What You'll Learn</h3>
               <div className="space-y-2">
                 {features.map((feature: string, index: number) => (
                   <div key={index} className="flex items-center space-x-2">
@@ -204,89 +171,76 @@ const CourseDetail = () => {
             </div>
           )}
 
-          {/* Course Content */}
-          <div>
-            <h3 className="text-lg font-semibold mb-3">Course Content</h3>
-            {lessons.length > 0 ? (
-              <div className="space-y-2">
-                {lessons.map((lesson, index) => {
-                  const isAccessible = hasPurchased || lesson.preview;
-                  const content = (
-                    <Card key={lesson.id} className={isAccessible && lesson.content_url ? "cursor-pointer hover:shadow-md transition-shadow" : ""}>
-                      <CardContent className="p-4">
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <h4 className="font-medium">{lesson.title}</h4>
-                            <p className="text-sm text-muted-foreground">
-                              {lesson.duration_seconds 
-                                ? `${Math.floor(lesson.duration_seconds / 60)} mins`
-                                : 'Click to watch'
-                              }
-                            </p>
-                          </div>
-                          {!isAccessible ? (
-                            <Lock className="w-4 h-4 text-muted-foreground" />
-                          ) : (
-                            <Play className="w-4 h-4 text-success" />
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-
-                  return isAccessible && lesson.content_url ? (
-                    <a 
-                      key={lesson.id}
-                      href={lesson.content_url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="block"
-                    >
-                      {content}
-                    </a>
-                  ) : content;
-                })}
-              </div>
-            ) : (
-              <p className="text-muted-foreground text-sm">No lessons available yet.</p>
-            )}
-          </div>
+          {/* Ad Section */}
+          {showingAd && adSettings?.ad_embed_code ? (
+            <Card className="border-2 border-primary">
+              <CardContent className="p-6 space-y-4">
+                <h3 className="text-lg font-semibold text-center">Sponsored Content</h3>
+                <div 
+                  className="min-h-[250px] flex items-center justify-center bg-muted rounded-lg"
+                  dangerouslySetInnerHTML={{ __html: adSettings.ad_embed_code }}
+                />
+                <Button 
+                  className="w-full bg-success hover:bg-success/90 text-white"
+                  onClick={handleAdComplete}
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  I've Watched the Ad - Continue
+                </Button>
+              </CardContent>
+            </Card>
+          ) : showingAd && !adSettings?.ad_embed_code ? (
+            <Card className="border-2 border-primary">
+              <CardContent className="p-6 space-y-4 text-center">
+                <h3 className="text-lg font-semibold">Loading Ad...</h3>
+                <p className="text-sm text-muted-foreground">No ad configured. Access granted!</p>
+                <Button 
+                  className="w-full bg-success hover:bg-success/90 text-white"
+                  onClick={handleAdComplete}
+                >
+                  Continue to Course
+                </Button>
+              </CardContent>
+            </Card>
+          ) : null}
         </div>
       </main>
 
-      {/* Sticky Buy/Access Button */}
+      {/* Sticky Access Button */}
       <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border p-4">
-        {purchaseStatus === 'paid' ? (
-          <Button 
-            size="lg" 
-            className="w-full bg-success hover:bg-success/90 text-white"
-            onClick={() => navigate(`/mycourses`)}
-          >
-            Go to My Courses
-          </Button>
-        ) : purchaseStatus === 'pending' ? (
-          <div className="space-y-2">
+        <div className="max-w-4xl mx-auto">
+          {adWatched ? (
             <Button 
               size="lg" 
-              className="w-full bg-yellow-500 hover:bg-yellow-600 text-white"
-              disabled
+              className="w-full bg-success hover:bg-success/90 text-white"
+              onClick={handleAccessCourse}
             >
-              Payment Pending Approval
+              <ExternalLink className="h-5 w-5 mr-2" />
+              Access Course on Google Drive
             </Button>
-            <p className="text-xs text-muted-foreground text-center">
-              Admin will verify your payment shortly
-            </p>
-          </div>
-        ) : (
-          <Button 
-            size="lg" 
-            className="w-full bg-primary hover:bg-primary-hover text-primary-foreground"
-            onClick={handleBuyNow}
-          >
-            Buy Now - Rs {course.price}
-          </Button>
-        )}
+          ) : (
+            <Button 
+              size="lg" 
+              className="w-full bg-primary hover:bg-primary-hover text-primary-foreground"
+              onClick={handleWatchAd}
+              disabled={showingAd}
+            >
+              <Zap className="h-5 w-5 mr-2" />
+              {showingAd ? "Watching Ad..." : "Watch Ad to Access Course"}
+            </Button>
+          )}
+        </div>
       </div>
+
+      {/* JSON-LD for SEO */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "Course",
+        "name": course.title,
+        "description": course.meta_description || course.description,
+        "provider": { "@type": "Organization", "name": "SkillzUp" },
+        "isAccessibleForFree": true,
+      }) }} />
     </div>
   );
 };

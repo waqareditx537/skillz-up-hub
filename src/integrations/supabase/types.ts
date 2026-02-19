@@ -14,13 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      ad_settings: {
+        Row: {
+          active: boolean
+          ad_embed_code: string
+          ad_name: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          ad_embed_code?: string
+          ad_name?: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          ad_embed_code?: string
+          ad_name?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       courses: {
         Row: {
           created_at: string
           description: string | null
+          drive_link: string | null
           features: Json
           id: string
           image_url: string | null
+          meta_description: string | null
           mrp: number | null
           price: number
           published: boolean
@@ -31,9 +57,11 @@ export type Database = {
         Insert: {
           created_at?: string
           description?: string | null
+          drive_link?: string | null
           features?: Json
           id?: string
           image_url?: string | null
+          meta_description?: string | null
           mrp?: number | null
           price: number
           published?: boolean
@@ -44,9 +72,11 @@ export type Database = {
         Update: {
           created_at?: string
           description?: string | null
+          drive_link?: string | null
           features?: Json
           id?: string
           image_url?: string | null
+          meta_description?: string | null
           mrp?: number | null
           price?: number
           published?: boolean
