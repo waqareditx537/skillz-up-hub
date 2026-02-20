@@ -1,68 +1,118 @@
-import { useState, useEffect } from "react";
-import heroBanner from "@/assets/hero-banner.jpg";
+import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+
+interface Banner {
+  id: string;
+  title: string;
+  image_url: string;
+  redirect_url: string;
+}
 
 const BannerSlider = () => {
-  const [currentSlide, setCurrentSlide] = useState(0);
-  
-  const banners = [
-    {
-      id: 1,
-      image: heroBanner,
-      title: "Master New Skills",
-      subtitle: "Learn from industry experts",
-    },
-    {
-      id: 2,
-      image: heroBanner,
-      title: "Advance Your Career",
-      subtitle: "Get certified in trending technologies",
-    }
-  ];
+  const navigate = useNavigate();
+  const [banners, setBanners] = useState<Banner[]>([]);
+  const [current, setCurrent] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % banners.length);
-    }, 5000);
-    return () => clearInterval(timer);
-  }, [banners.length]);
+    supabase
+      .from("banners")
+      .select("id,title,image_url,redirect_url,sort_order")
+      .eq("active", true)
+      .order("sort_order")
+      .then(({ data }) => {
+        if (data && data.length > 0) setBanners(data);
+      });
+  }, []);
+
+  const next = useCallback(() => setCurrent((p) => (p + 1) % banners.length), [banners.length]);
+  const prev = () => setCurrent((p) => (p - 1 + banners.length) % banners.length);
+
+  useEffect(() => {
+    if (banners.length <= 1 || isHovered) return;
+    const t = setInterval(next, 4000);
+    return () => clearInterval(t);
+  }, [banners.length, isHovered, next]);
+
+  const handleClick = (banner: Banner) => {
+    if (!banner.redirect_url) return;
+    if (banner.redirect_url.startsWith("http")) {
+      window.open(banner.redirect_url, "_blank", "noopener,noreferrer");
+    } else {
+      navigate(banner.redirect_url);
+    }
+  };
+
+  if (banners.length === 0) return null;
 
   return (
-    <div className="relative w-full h-48 md:h-64 overflow-hidden">
+    <div
+      className="relative w-full overflow-hidden rounded-none select-none"
+      style={{ height: "clamp(160px, 30vw, 320px)" }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {/* Slides */}
       {banners.map((banner, index) => (
         <div
           key={banner.id}
-          className={`absolute inset-0 transition-transform duration-500 ease-in-out ${
-            index === currentSlide ? "translate-x-0" : "translate-x-full"
-          }`}
-          style={{
-            transform: `translateX(${(index - currentSlide) * 100}%)`,
-          }}
+          className="absolute inset-0 transition-all duration-700 ease-in-out cursor-pointer"
+          style={{ transform: `translateX(${(index - current) * 100}%)` }}
+          onClick={() => handleClick(banner)}
         >
           <img
-            src={banner.image}
+            src={banner.image_url}
             alt={banner.title}
             className="w-full h-full object-cover"
+            draggable={false}
           />
-          <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
-            <div className="text-center text-white px-4">
-              <h2 className="text-2xl md:text-3xl font-bold mb-2">{banner.title}</h2>
-              <p className="text-lg">{banner.subtitle}</p>
+          {/* Gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+          {banner.title && (
+            <div className="absolute bottom-4 left-4 right-4">
+              <p className="text-white font-bold text-lg md:text-2xl drop-shadow-lg">{banner.title}</p>
             </div>
-          </div>
+          )}
         </div>
       ))}
-      
-      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
-        {banners.map((_, index) => (
+
+      {/* Arrows — only show if multiple */}
+      {banners.length > 1 && (
+        <>
           <button
-            key={index}
-            onClick={() => setCurrentSlide(index)}
-            className={`w-2 h-2 rounded-full transition-colors ${
-              index === currentSlide ? "bg-white" : "bg-white/50"
-            }`}
-          />
-        ))}
-      </div>
+            onClick={(e) => { e.stopPropagation(); prev(); }}
+            className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/70 text-white rounded-full p-1.5 transition-all z-10"
+            aria-label="Previous"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); next(); }}
+            className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/70 text-white rounded-full p-1.5 transition-all z-10"
+            aria-label="Next"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
+        </>
+      )}
+
+      {/* Dot indicators */}
+      {banners.length > 1 && (
+        <div className="absolute bottom-2 right-4 flex gap-1.5 z-10">
+          {banners.map((_, i) => (
+            <button
+              key={i}
+              onClick={(e) => { e.stopPropagation(); setCurrent(i); }}
+              className={`rounded-full transition-all duration-300 ${
+                i === current ? "w-5 h-2 bg-white" : "w-2 h-2 bg-white/50"
+              }`}
+              aria-label={`Slide ${i + 1}`}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 };

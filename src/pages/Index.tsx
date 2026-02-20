@@ -1,108 +1,156 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import CourseCard from "@/components/CourseCard";
+import BannerSlider from "@/components/BannerSlider";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
-import { Button } from "@/components/ui/button";
-import { BookOpen, Zap, Award } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Search, BookOpen } from "lucide-react";
 
 const Index = () => {
   const navigate = useNavigate();
   const [courses, setCourses] = useState<any[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
   const [loadingCourses, setLoadingCourses] = useState(true);
+  const [search, setSearch] = useState("");
+  const [activeCategory, setActiveCategory] = useState("All");
 
   useEffect(() => {
-    fetchCourses();
     document.title = "SkillzUp - Free Online Courses | Learn Programming, Design & More";
-    const desc = "Access free online courses on programming, web design, React, JavaScript and more. Watch a short ad and start learning today!";
     let meta = document.querySelector('meta[name="description"]') as HTMLMetaElement;
     if (!meta) { meta = document.createElement("meta") as HTMLMetaElement; meta.name = "description"; document.head.appendChild(meta); }
-    meta.content = desc;
+    meta.content = "Access free online courses on programming, web design, React, JavaScript and more. Watch a short ad and start learning today!";
+    fetchCourses();
+    fetchCategories();
   }, []);
 
   const fetchCourses = async () => {
     try {
-      const { data, error } = await supabase.from("courses").select("*").eq("published", true).order("created_at", { ascending: false });
+      const { data, error } = await supabase
+        .from("courses")
+        .select("*")
+        .eq("published", true)
+        .order("created_at", { ascending: false });
       if (error) throw error;
       setCourses(data || []);
-    } catch (error) {
-      console.error("Error fetching courses:", error);
+    } catch (err) {
+      console.error(err);
     } finally {
       setLoadingCourses(false);
     }
   };
 
-  const latestCourses = courses.slice(0, 6);
+  const fetchCategories = async () => {
+    const { data } = await supabase.from("categories").select("name").order("sort_order");
+    if (data) setCategories(data.map((c: any) => c.name));
+  };
+
+  const filtered = useMemo(() => {
+    return courses.filter((c) => {
+      const matchSearch =
+        !search.trim() ||
+        c.title?.toLowerCase().includes(search.toLowerCase()) ||
+        c.description?.toLowerCase().includes(search.toLowerCase());
+      const matchCat =
+        activeCategory === "All" || c.category === activeCategory;
+      return matchSearch && matchCat;
+    });
+  }, [courses, search, activeCategory]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <SiteHeader />
 
-      {/* Hero Section */}
-      <section className="bg-gradient-to-br from-primary/10 to-accent py-14 md:py-24">
-        <div className="max-w-6xl mx-auto px-4 text-center space-y-6">
-          <h1 className="text-3xl md:text-5xl font-bold text-foreground">
-            Learn For <span className="text-primary">Free</span>
-          </h1>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-            Access premium courses completely free. Just watch a short ad and unlock full course content instantly.
-          </p>
-          <Button size="lg" className="bg-primary hover:bg-primary-hover text-primary-foreground" onClick={() => navigate("/courses")}>
-            <BookOpen className="h-5 w-5 mr-2" />
-            Browse Free Courses
-          </Button>
-        </div>
-      </section>
+      {/* Auto-scroll Banner */}
+      <BannerSlider />
 
-      {/* Features */}
-      <section className="py-12 bg-background">
-        <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="text-center p-6 rounded-xl border border-border bg-card">
-            <Zap className="h-10 w-10 mx-auto mb-3 text-primary" />
-            <h3 className="text-lg font-semibold mb-2">100% Free Access</h3>
-            <p className="text-sm text-muted-foreground">All courses are free. Watch a short rewarded ad to unlock.</p>
+      {/* Search + Categories bar */}
+      <div className="bg-card border-b border-border sticky top-[56px] z-40 shadow-sm">
+        <div className="max-w-6xl mx-auto px-4 py-3 space-y-3">
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              className="pl-9 bg-background"
+              placeholder="Search courses by name or topic..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
           </div>
-          <div className="text-center p-6 rounded-xl border border-border bg-card">
-            <BookOpen className="h-10 w-10 mx-auto mb-3 text-primary" />
-            <h3 className="text-lg font-semibold mb-2">Quality Content</h3>
-            <p className="text-sm text-muted-foreground">Expert-curated courses on programming, design & more.</p>
-          </div>
-          <div className="text-center p-6 rounded-xl border border-border bg-card">
-            <Award className="h-10 w-10 mx-auto mb-3 text-primary" />
-            <h3 className="text-lg font-semibold mb-2">Instant Access</h3>
-            <p className="text-sm text-muted-foreground">No signup needed. Watch ad, get the Google Drive link.</p>
-          </div>
-        </div>
-      </section>
-
-      {/* Latest Courses */}
-      <section className="py-12 bg-muted/30 flex-1">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl md:text-3xl font-bold text-foreground">Latest Courses</h2>
-            <Button variant="outline" onClick={() => navigate("/courses")}>View All</Button>
-          </div>
-          {loadingCourses ? (
-            <p className="text-muted-foreground text-center py-12">Loading courses...</p>
-          ) : latestCourses.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {latestCourses.map((course) => (
-                <CourseCard
-                  key={course.id}
-                  id={course.id}
-                  title={course.title}
-                  image={course.image_url}
-                  description={course.description}
-                  onClick={() => navigate(`/course/${course.slug || course.id}`)}
-                />
+          {/* Category chips */}
+          {categories.length > 0 && (
+            <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+              {["All", ...categories].map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setActiveCategory(cat)}
+                  className={`flex-shrink-0 px-3 py-1 rounded-full text-sm font-medium border transition-all duration-200 ${
+                    activeCategory === cat
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-background text-muted-foreground border-border hover:border-primary hover:text-primary"
+                  }`}
+                >
+                  {cat}
+                </button>
               ))}
             </div>
-          ) : (
-            <p className="text-muted-foreground text-center py-12">No courses available yet.</p>
           )}
         </div>
-      </section>
+      </div>
+
+      {/* Courses Section */}
+      <main className="flex-1 max-w-6xl mx-auto px-4 py-8 w-full">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <BookOpen className="h-5 w-5 text-primary" />
+            <h2 className="text-xl font-bold text-foreground">
+              {activeCategory === "All" ? "All Free Courses" : activeCategory}
+            </h2>
+          </div>
+          <Badge variant="secondary" className="text-xs">
+            {loadingCourses ? "..." : `${filtered.length} course${filtered.length !== 1 ? "s" : ""}`}
+          </Badge>
+        </div>
+
+        {loadingCourses ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="bg-card border border-border rounded-lg overflow-hidden animate-pulse">
+                <div className="aspect-video bg-muted" />
+                <div className="p-4 space-y-2">
+                  <div className="h-4 bg-muted rounded w-3/4" />
+                  <div className="h-3 bg-muted rounded w-full" />
+                  <div className="h-3 bg-muted rounded w-2/3" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filtered.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filtered.map((course) => (
+              <CourseCard
+                key={course.id}
+                id={course.id}
+                title={course.title}
+                image={course.image_url}
+                description={course.description}
+                category={course.category}
+                onClick={() => navigate(`/course/${course.slug || course.id}`)}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-20">
+            <Search className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+            <h3 className="text-lg font-medium text-foreground mb-1">No courses found</h3>
+            <p className="text-muted-foreground text-sm">
+              {search ? `No results for "${search}"` : "No courses in this category yet."}
+            </p>
+          </div>
+        )}
+      </main>
 
       <SiteFooter />
     </div>
