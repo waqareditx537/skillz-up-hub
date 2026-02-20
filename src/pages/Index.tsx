@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import CourseCard from "@/components/CourseCard";
+import SiteHeader from "@/components/SiteHeader";
+import SiteFooter from "@/components/SiteFooter";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Zap, Award, Shield } from "lucide-react";
+import { BookOpen, Zap, Award } from "lucide-react";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -12,30 +14,16 @@ const Index = () => {
 
   useEffect(() => {
     fetchCourses();
-  }, []);
-
-  useEffect(() => {
-    // SEO meta tags
     document.title = "SkillzUp - Free Online Courses | Learn Programming, Design & More";
-    const metaDesc = document.querySelector('meta[name="description"]');
-    if (metaDesc) {
-      metaDesc.setAttribute("content", "Access free online courses on programming, web design, React, JavaScript and more. Watch a short ad and start learning today!");
-    } else {
-      const meta = document.createElement("meta");
-      meta.name = "description";
-      meta.content = "Access free online courses on programming, web design, React, JavaScript and more. Watch a short ad and start learning today!";
-      document.head.appendChild(meta);
-    }
+    const desc = "Access free online courses on programming, web design, React, JavaScript and more. Watch a short ad and start learning today!";
+    let meta = document.querySelector('meta[name="description"]') as HTMLMetaElement;
+    if (!meta) { meta = document.createElement("meta") as HTMLMetaElement; meta.name = "description"; document.head.appendChild(meta); }
+    meta.content = desc;
   }, []);
 
   const fetchCourses = async () => {
     try {
-      const { data, error } = await supabase
-        .from("courses")
-        .select("*")
-        .eq("published", true)
-        .order("created_at", { ascending: false });
-
+      const { data, error } = await supabase.from("courses").select("*").eq("published", true).order("created_at", { ascending: false });
       if (error) throw error;
       setCourses(data || []);
     } catch (error) {
@@ -45,35 +33,18 @@ const Index = () => {
     }
   };
 
-  const handleCourseClick = (courseId: string) => {
-    navigate(`/course/${courseId}`);
-  };
-
   const latestCourses = courses.slice(0, 6);
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="bg-primary text-primary-foreground p-4 sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <h1 className="text-xl font-bold">SkillzUp</h1>
-          <nav className="hidden md:flex items-center gap-6">
-            <a href="/" className="hover:underline font-medium">Home</a>
-            <a href="/courses" className="hover:underline">All Courses</a>
-            <a href="/help" className="hover:underline">Help</a>
-          </nav>
-          <Button variant="ghost" size="sm" className="text-primary-foreground md:hidden" onClick={() => navigate("/courses")}>
-            All Courses
-          </Button>
-        </div>
-      </header>
+    <div className="min-h-screen bg-background flex flex-col">
+      <SiteHeader />
 
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-primary/10 to-accent py-12 md:py-20">
+      <section className="bg-gradient-to-br from-primary/10 to-accent py-14 md:py-24">
         <div className="max-w-6xl mx-auto px-4 text-center space-y-6">
-          <h2 className="text-3xl md:text-5xl font-bold text-foreground">
+          <h1 className="text-3xl md:text-5xl font-bold text-foreground">
             Learn For <span className="text-primary">Free</span>
-          </h2>
+          </h1>
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
             Access premium courses completely free. Just watch a short ad and unlock full course content instantly.
           </p>
@@ -105,14 +76,13 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Courses Section */}
-      <section className="py-12 bg-muted/30">
+      {/* Latest Courses */}
+      <section className="py-12 bg-muted/30 flex-1">
         <div className="max-w-6xl mx-auto px-4">
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-2xl md:text-3xl font-bold text-foreground">Latest Courses</h2>
             <Button variant="outline" onClick={() => navigate("/courses")}>View All</Button>
           </div>
-
           {loadingCourses ? (
             <p className="text-muted-foreground text-center py-12">Loading courses...</p>
           ) : latestCourses.length > 0 ? (
@@ -124,7 +94,7 @@ const Index = () => {
                   title={course.title}
                   image={course.image_url}
                   description={course.description}
-                  onClick={() => handleCourseClick(course.id)}
+                  onClick={() => navigate(`/course/${course.slug || course.id}`)}
                 />
               ))}
             </div>
@@ -134,19 +104,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-card border-t border-border py-8">
-        <div className="max-w-6xl mx-auto px-4 text-center space-y-4">
-          <p className="text-lg font-bold text-primary">SkillzUp</p>
-          <p className="text-sm text-muted-foreground">Free online courses for everyone. Learn, grow, succeed.</p>
-          <div className="flex justify-center gap-6 text-sm text-muted-foreground">
-            <a href="/courses" className="hover:text-primary">Courses</a>
-            <a href="/help" className="hover:text-primary">Help</a>
-            <a href="/admin/login" className="hover:text-primary">Admin</a>
-          </div>
-          <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} SkillzUp. All rights reserved.</p>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 };

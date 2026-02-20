@@ -198,6 +198,30 @@ export type Database = {
           },
         ]
       }
+      site_pages: {
+        Row: {
+          content: string
+          id: string
+          page_key: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content?: string
+          id?: string
+          page_key: string
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          id?: string
+          page_key?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
