@@ -8,6 +8,9 @@ import Index from "./pages/Index";
 import CourseDetail from "./pages/CourseDetail";
 import Courses from "./pages/Courses";
 import Help from "./pages/Help";
+import AboutUs from "./pages/AboutUs";
+import ContactUs from "./pages/ContactUs";
+import CopyrightPolicy from "./pages/CopyrightPolicy";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminForgotPassword from "./pages/admin/AdminForgotPassword";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -27,6 +30,9 @@ const App = () => (
             <Route path="/courses" element={<Courses />} />
             <Route path="/course/:id" element={<CourseDetail />} />
             <Route path="/help" element={<Help />} />
+            <Route path="/about" element={<AboutUs />} />
+            <Route path="/contact" element={<ContactUs />} />
+            <Route path="/copyright" element={<CopyrightPolicy />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/forgot-password" element={<AdminForgotPassword />} />
             <Route path="/admin" element={<AdminDashboard />} />
