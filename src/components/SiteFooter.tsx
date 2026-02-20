@@ -3,8 +3,10 @@ const SiteFooter = () => (
     <div className="max-w-6xl mx-auto px-4">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
         <div>
-          <h3 className="font-bold text-foreground mb-3">SkillzUp</h3>
-          <p className="text-sm text-muted-foreground">Free online courses for everyone. Learn, grow, succeed.</p>
+          <h3 className="font-bold text-foreground mb-2">SkillzUp</h3>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            Free online courses for everyone. Learn, grow, succeed.
+          </p>
         </div>
         <div>
           <h3 className="font-semibold text-foreground mb-3">Quick Links</h3>
@@ -23,12 +25,11 @@ const SiteFooter = () => (
           </ul>
         </div>
       </div>
-      <div className="border-t border-border pt-6 flex flex-col md:flex-row justify-between items-center gap-2 text-xs text-muted-foreground">
+      <div className="border-t border-border pt-5 flex flex-col md:flex-row justify-between items-center gap-2 text-xs text-muted-foreground">
         <p>© {new Date().getFullYear()} SkillzUp. All rights reserved.</p>
-        <div className="flex gap-4">
-          <a href="/copyright" className="hover:text-primary transition-colors">DMCA / Copyright Report</a>
-          <a href="/admin/login" className="hover:text-primary transition-colors">Admin</a>
-        </div>
+        <p className="text-xs text-muted-foreground/60">
+          Made with ❤️ for learners everywhere
+        </p>
       </div>
     </div>
   </footer>
