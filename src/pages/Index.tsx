@@ -63,9 +63,6 @@ const Index = () => {
     <div className="min-h-screen bg-background flex flex-col">
       <SiteHeader />
 
-      {/* Auto-scroll Banner */}
-      <BannerSlider />
-
       {/* Search + Categories bar */}
       <div className="bg-card border-b border-border sticky top-[56px] z-40 shadow-sm">
         <div className="max-w-6xl mx-auto px-4 py-3 space-y-3">
@@ -98,6 +95,11 @@ const Index = () => {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Auto-scroll Banner */}
+      <div className="max-w-6xl mx-auto px-4 pt-4">
+        <BannerSlider />
       </div>
 
       {/* Courses Section */}
