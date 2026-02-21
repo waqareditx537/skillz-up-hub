@@ -49,8 +49,8 @@ const BannerSlider = () => {
 
   return (
     <div
-      className="relative w-full overflow-hidden rounded-none select-none"
-      style={{ height: "clamp(160px, 30vw, 320px)" }}
+      className="relative w-full overflow-hidden rounded-xl select-none shadow-lg"
+      style={{ height: "clamp(140px, 28vw, 280px)" }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
