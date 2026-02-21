@@ -50,7 +50,7 @@ const BannerSlider = () => {
   return (
     <div
       className="relative w-full overflow-hidden rounded-xl select-none shadow-lg"
-      style={{ height: "clamp(140px, 28vw, 280px)" }}
+      style={{ height: "clamp(120px, 25vw, 260px)" }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -67,45 +67,45 @@ const BannerSlider = () => {
             alt={banner.title}
             className="w-full h-full object-cover"
             draggable={false}
+            loading="lazy"
           />
-          {/* Gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
           {banner.title && (
-            <div className="absolute bottom-4 left-4 right-4">
-              <p className="text-white font-bold text-lg md:text-2xl drop-shadow-lg">{banner.title}</p>
+            <div className="absolute bottom-3 left-3 right-3 sm:bottom-4 sm:left-4 sm:right-4">
+              <p className="text-white font-bold text-sm sm:text-lg md:text-2xl drop-shadow-lg line-clamp-1">{banner.title}</p>
             </div>
           )}
         </div>
       ))}
 
-      {/* Arrows — only show if multiple */}
+      {/* Arrows */}
       {banners.length > 1 && (
         <>
           <button
             onClick={(e) => { e.stopPropagation(); prev(); }}
-            className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/70 text-white rounded-full p-1.5 transition-all z-10"
+            className="absolute left-1.5 sm:left-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/70 active:bg-black/80 text-white rounded-full p-1 sm:p-1.5 transition-all z-10 min-h-[32px] min-w-[32px] flex items-center justify-center"
             aria-label="Previous"
           >
-            <ChevronLeft className="h-5 w-5" />
+            <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); next(); }}
-            className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/70 text-white rounded-full p-1.5 transition-all z-10"
+            className="absolute right-1.5 sm:right-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/70 active:bg-black/80 text-white rounded-full p-1 sm:p-1.5 transition-all z-10 min-h-[32px] min-w-[32px] flex items-center justify-center"
             aria-label="Next"
           >
-            <ChevronRight className="h-5 w-5" />
+            <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
           </button>
         </>
       )}
 
       {/* Dot indicators */}
       {banners.length > 1 && (
-        <div className="absolute bottom-2 right-4 flex gap-1.5 z-10">
+        <div className="absolute bottom-1.5 sm:bottom-2 right-3 sm:right-4 flex gap-1.5 z-10">
           {banners.map((_, i) => (
             <button
               key={i}
               onClick={(e) => { e.stopPropagation(); setCurrent(i); }}
-              className={`rounded-full transition-all duration-300 ${
+              className={`rounded-full transition-all duration-300 min-h-[8px] ${
                 i === current ? "w-5 h-2 bg-white" : "w-2 h-2 bg-white/50"
               }`}
               aria-label={`Slide ${i + 1}`}
