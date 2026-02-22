@@ -44,6 +44,7 @@ const AdminDashboard = () => {
   // Banner form
   const [bannerForm, setBannerForm] = useState({ title: "", image_url: "", redirect_url: "", sort_order: 0 });
   const [editingBanner, setEditingBanner] = useState<any>(null);
+  const [bannerHeight, setBannerHeight] = useState("200");
 
   // Category form
   const [newCategory, setNewCategory] = useState("");
@@ -57,7 +58,18 @@ const AdminDashboard = () => {
   }, [isAdmin]);
 
   const fetchAll = () => {
-    fetchCourses(); fetchAdSettings(); fetchPages(); fetchBanners(); fetchCategories();
+    fetchCourses(); fetchAdSettings(); fetchPages(); fetchBanners(); fetchCategories(); fetchBannerHeight();
+  };
+
+  const fetchBannerHeight = async () => {
+    const { data } = await supabase.from("site_settings").select("value").eq("key", "banner_height").maybeSingle();
+    if (data?.value) setBannerHeight(data.value);
+  };
+
+  const saveBannerHeight = async () => {
+    const { error } = await supabase.from("site_settings").upsert({ key: "banner_height", value: bannerHeight, updated_at: new Date().toISOString() }, { onConflict: "key" });
+    if (!error) toast({ title: "Banner height saved!" });
+    else toast({ title: "Error", description: error.message, variant: "destructive" });
   };
 
   const fetchCourses = async () => {
@@ -392,8 +404,25 @@ const AdminDashboard = () => {
           <TabsContent value="banners" className="space-y-6">
             <Card>
               <CardHeader>
+                <CardTitle className="flex items-center gap-2"><ImagePlay className="h-5 w-5 text-primary" />Banner Size</CardTitle>
+                <CardDescription>Control the banner height on the homepage. YouTube-style is ~200px mobile, ~300px desktop.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-end gap-3">
+                  <div className="flex-1">
+                    <Label>Banner Height (px)</Label>
+                    <Input type="number" min={100} max={500} value={bannerHeight} onChange={e => setBannerHeight(e.target.value)} placeholder="200" />
+                    <p className="text-xs text-muted-foreground mt-1">Recommended: 150–300px. Preview updates after save.</p>
+                  </div>
+                  <Button onClick={saveBannerHeight}><Save className="h-4 w-4 mr-2" />Save</Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
                 <CardTitle className="flex items-center gap-2"><ImagePlay className="h-5 w-5 text-primary" />Add Promotional Banner</CardTitle>
-                <CardDescription>Upload banners that auto-scroll on the homepage. Click redirects to your link.</CardDescription>
+                <CardDescription>Upload banners that auto-scroll on the homepage. Use 16:9 images (e.g. 1280×720) for best results.</CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleAddBanner} className="space-y-4">
@@ -409,9 +438,9 @@ const AdminDashboard = () => {
                   </div>
                   <div>
                     <Label>Banner Image URL *</Label>
-                    <Input value={bannerForm.image_url} onChange={e => setBannerForm({ ...bannerForm, image_url: e.target.value })} placeholder="https://example.com/banner.jpg (1200×400 recommended)" required />
+                    <Input value={bannerForm.image_url} onChange={e => setBannerForm({ ...bannerForm, image_url: e.target.value })} placeholder="https://example.com/banner.jpg (1280×720 recommended)" required />
                     {bannerForm.image_url && (
-                      <img src={bannerForm.image_url} alt="preview" className="mt-2 h-24 w-full object-cover rounded border" onError={e => (e.currentTarget.style.display = "none")} />
+                      <img src={bannerForm.image_url} alt="preview" className="mt-2 h-24 w-full object-cover rounded-xl border" onError={e => (e.currentTarget.style.display = "none")} />
                     )}
                   </div>
                   <div>
