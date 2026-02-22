@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, BookOpen } from "lucide-react";
@@ -16,6 +16,21 @@ const SiteHeader = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [menuHeight, setMenuHeight] = useState(0);
+
+  useEffect(() => {
+    if (menuOpen && menuRef.current) {
+      setMenuHeight(menuRef.current.scrollHeight);
+    } else {
+      setMenuHeight(0);
+    }
+  }, [menuOpen]);
+
+  // Close menu on route change
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [location.pathname]);
 
   const handleNav = (href: string) => {
     navigate(href);
@@ -62,25 +77,34 @@ const SiteHeader = () => {
         </Button>
       </div>
 
-      {/* Mobile Menu */}
-      {menuOpen && (
+      {/* Mobile Menu - Slide down animation */}
+      <div
+        ref={menuRef}
+        className="md:hidden overflow-hidden transition-all duration-300 ease-in-out"
+        style={{ maxHeight: menuOpen ? `${menuHeight}px` : "0px" }}
+      >
         <nav
-          className="md:hidden bg-primary border-t border-primary-foreground/20 px-4 pb-4 flex flex-col gap-1 text-sm font-medium animate-fade-in"
+          className="bg-primary border-t border-primary-foreground/20 px-4 pb-4 pt-1 flex flex-col gap-1 text-sm font-medium"
           aria-label="Mobile navigation"
         >
-          {navLinks.map((link) => (
+          {navLinks.map((link, i) => (
             <button
               key={link.href}
               onClick={() => handleNav(link.href)}
-              className={`text-left py-3 px-2 rounded-lg active:bg-primary-hover transition-colors min-h-[44px] ${
-                location.pathname === link.href ? "bg-primary-hover" : ""
+              className={`text-left py-3 px-3 rounded-lg active:bg-primary-hover transition-all duration-200 min-h-[44px] ${
+                location.pathname === link.href ? "bg-primary-hover font-semibold" : ""
               }`}
+              style={{ 
+                opacity: menuOpen ? 1 : 0, 
+                transform: menuOpen ? "translateX(0)" : "translateX(-12px)",
+                transition: `opacity 200ms ${80 + i * 50}ms, transform 200ms ${80 + i * 50}ms`
+              }}
             >
               {link.label}
             </button>
           ))}
         </nav>
-      )}
+      </div>
     </header>
   );
 };
