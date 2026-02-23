@@ -15,8 +15,6 @@ const BannerSlider = () => {
   const [banners, setBanners] = useState<Banner[]>([]);
   const [current, setCurrent] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
-  const [bannerHeight, setBannerHeight] = useState(200);
-
   useEffect(() => {
     supabase
       .from("banners")
@@ -25,16 +23,6 @@ const BannerSlider = () => {
       .order("sort_order")
       .then(({ data }) => {
         if (data && data.length > 0) setBanners(data);
-      });
-
-    // Fetch banner height setting
-    supabase
-      .from("site_settings")
-      .select("value")
-      .eq("key", "banner_height")
-      .maybeSingle()
-      .then(({ data }) => {
-        if (data?.value) setBannerHeight(parseInt(data.value) || 200);
       });
   }, []);
 
@@ -60,8 +48,7 @@ const BannerSlider = () => {
 
   return (
     <div
-      className="relative w-full overflow-hidden rounded-2xl select-none shadow-lg"
-      style={{ height: `${bannerHeight}px` }}
+      className="relative w-full overflow-hidden rounded-2xl select-none shadow-lg aspect-video"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >

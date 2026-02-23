@@ -16,6 +16,7 @@ const CourseDetail = () => {
   const [adSettings, setAdSettings] = useState<any>(null);
   const [adWatched, setAdWatched] = useState(false);
   const [showingAd, setShowingAd] = useState(false);
+  const [adCountdown, setAdCountdown] = useState(0);
   const [loadingCourse, setLoadingCourse] = useState(true);
 
   useEffect(() => {
@@ -74,12 +75,25 @@ const CourseDetail = () => {
     }
   };
 
-  const handleWatchAd = () => setShowingAd(true);
-  const handleAdComplete = () => {
-    setAdWatched(true);
-    setShowingAd(false);
-    toast.success("Ad complete! You can now access the course.");
+  const AD_DURATION = 15; // seconds
+
+  const handleWatchAd = () => {
+    setShowingAd(true);
+    setAdCountdown(AD_DURATION);
   };
+
+  useEffect(() => {
+    if (!showingAd || adCountdown <= 0) {
+      if (showingAd && adCountdown <= 0) {
+        setAdWatched(true);
+        setShowingAd(false);
+        toast.success("Ad complete! You can now access the course.");
+      }
+      return;
+    }
+    const timer = setTimeout(() => setAdCountdown((c) => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [showingAd, adCountdown]);
   const handleAccessCourse = () => {
     if (course?.drive_link) {
       window.open(course.drive_link, "_blank", "noopener,noreferrer");
@@ -163,30 +177,7 @@ const CourseDetail = () => {
             </div>
           )}
 
-          {showingAd && (
-            <Card className="border-2 border-primary">
-              <CardContent className="p-4 sm:p-6 space-y-4">
-                <h3 className="text-base sm:text-lg font-semibold text-center">📣 Sponsored Content</h3>
-                {adSettings?.ad_embed_code ? (
-                  <div
-                    className="min-h-[200px] sm:min-h-[250px] flex items-center justify-center bg-muted rounded-lg overflow-hidden"
-                    dangerouslySetInnerHTML={{ __html: adSettings.ad_embed_code }}
-                  />
-                ) : (
-                  <div className="min-h-[120px] sm:min-h-[150px] flex items-center justify-center bg-muted rounded-lg">
-                    <p className="text-sm text-muted-foreground">Ad loading...</p>
-                  </div>
-                )}
-                <Button
-                  className="w-full bg-success hover:bg-success/90 text-success-foreground min-h-[44px]"
-                  onClick={handleAdComplete}
-                >
-                  <Eye className="h-4 w-4 mr-2" />
-                  I've Watched the Ad — Continue
-                </Button>
-              </CardContent>
-            </Card>
-          )}
+          {/* Fullscreen ad overlay rendered via portal-style fixed positioning */}
         </div>
       </main>
 
@@ -215,6 +206,37 @@ const CourseDetail = () => {
           )}
         </div>
       </div>
+
+      {/* Fullscreen Ad Overlay */}
+      {showingAd && (
+        <div className="fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center">
+          <div className="absolute top-4 right-4 bg-white/20 text-white rounded-full w-12 h-12 flex items-center justify-center text-lg font-bold backdrop-blur-sm">
+            {adCountdown}
+          </div>
+          <div className="flex-1 w-full flex items-center justify-center p-4">
+            {adSettings?.ad_embed_code ? (
+              <div
+                className="w-full h-full max-w-3xl flex items-center justify-center overflow-hidden"
+                dangerouslySetInnerHTML={{ __html: adSettings.ad_embed_code }}
+              />
+            ) : (
+              <div className="text-center space-y-4">
+                <p className="text-white/80 text-lg">📣 Sponsored Content</p>
+                <p className="text-white/50 text-sm">Ad is playing... Please wait {adCountdown}s</p>
+              </div>
+            )}
+          </div>
+          <div className="w-full px-4 pb-6">
+            <div className="w-full bg-white/20 rounded-full h-2 overflow-hidden">
+              <div
+                className="h-full bg-white rounded-full transition-all duration-1000 ease-linear"
+                style={{ width: `${((AD_DURATION - adCountdown) / AD_DURATION) * 100}%` }}
+              />
+            </div>
+            <p className="text-white/60 text-center text-xs mt-2">Course will unlock automatically</p>
+          </div>
+        </div>
+      )}
 
       {/* JSON-LD */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
