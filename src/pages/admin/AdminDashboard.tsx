@@ -402,22 +402,6 @@ const AdminDashboard = () => {
 
           {/* ── BANNERS ── */}
           <TabsContent value="banners" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2"><ImagePlay className="h-5 w-5 text-primary" />Banner Size</CardTitle>
-                <CardDescription>Control the banner height on the homepage. YouTube-style is ~200px mobile, ~300px desktop.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-end gap-3">
-                  <div className="flex-1">
-                    <Label>Banner Height (px)</Label>
-                    <Input type="number" min={100} max={500} value={bannerHeight} onChange={e => setBannerHeight(e.target.value)} placeholder="200" />
-                    <p className="text-xs text-muted-foreground mt-1">Recommended: 150–300px. Preview updates after save.</p>
-                  </div>
-                  <Button onClick={saveBannerHeight}><Save className="h-4 w-4 mr-2" />Save</Button>
-                </div>
-              </CardContent>
-            </Card>
 
             <Card>
               <CardHeader>
